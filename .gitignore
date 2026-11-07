@@ -7,3 +7,6 @@ frames/
 __pycache__/
 # large uncompressed stems (FLAC copies are committed)
 project/assets/audio/stem_*.wav
+
+# MPFB2 data (CC0 assets): git clone https://github.com/makehumancommunity/mpfb2 and symlink src/mpfb/data here
+third_party/
