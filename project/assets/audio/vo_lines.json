@@ -1,0 +1,42 @@
+[
+ {
+  "file": "vo_00.wav",
+  "start": 0.7,
+  "dur": 4.183916666666667,
+  "text": "Every night, before he sleeps, he fights a battle no one can see.",
+  "voice": "narrator",
+  "sr": 24000
+ },
+ {
+  "file": "vo_01.wav",
+  "start": 5.55,
+  "dur": 3.024,
+  "text": "Not with his manager. Not with deadlines.",
+  "voice": "narrator",
+  "sr": 24000
+ },
+ {
+  "file": "vo_02.wav",
+  "start": 9.35,
+  "dur": 2.620833333333333,
+  "text": "But with a question that keeps getting louder...",
+  "voice": "narrator",
+  "sr": 24000
+ },
+ {
+  "file": "vo_03.wav",
+  "start": 12.95,
+  "dur": 2.254166666666667,
+  "text": "What if AI takes my job?",
+  "voice": "narrator",
+  "sr": 24000
+ },
+ {
+  "file": "vo_04.wav",
+  "start": 19.25,
+  "dur": 2.132875,
+  "text": "What if tomorrow is my last day?",
+  "voice": "inner",
+  "sr": 24000
+ }
+]
