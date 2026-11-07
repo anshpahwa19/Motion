@@ -35,6 +35,7 @@ def to_im(a):
 
 
 def blur(a, r):
+    r = float(np.mean(r))
     if r <= 0:
         return a
     im = to_im(a)
@@ -69,7 +70,7 @@ def chroma(a, amt):
     out = a.copy()
     s = 1 + amt
     for c, k in ((0, s), (2, 1 / s)):
-        im = Image.fromarray((a[..., c] * 255).astype(np.uint8))
+        im = Image.fromarray((np.clip(a[..., c], 0, 1) * 255).astype(np.uint8))
         nw, nh = int(w * k), int(h * k)
         im = im.resize((nw, nh), Image.BILINEAR)
         l, t = (nw - w) // 2, (nh - h) // 2
@@ -122,6 +123,7 @@ def shake(a, f, amp):
 
 def edge_blur(a, amount):
     """Blur outside the centre (attention narrowing)."""
+    amount = float(np.mean(amount))
     if amount <= 0:
         return a
     h, w = a.shape[:2]
