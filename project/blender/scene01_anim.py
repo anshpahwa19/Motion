@@ -499,15 +499,15 @@ def cameras(objs, setobjs, phone, info):
     ph = phone.matrix_world.copy()
     scr_c = ph @ Vector((0, 0, 0)); scr_n = (ph.to_3x3() @ Vector((0, 0, 1))).normalized()
     eyes = at(200)
-    pov = eyes + (scr_c - eyes) * 0.34 + Vector((-0.055, 0.015, 0.0))
-    cam, tgt = make_cam('CAM_S2b', 38, 4.5)
-    key_cam(cam, tgt, 151, pov + Vector((0.01, 0.02, 0.01)), scr_c + Vector((0, 0, 0)), 36, dist(pov, scr_c))
-    key_cam(cam, tgt, 216, pov + Vector((0.0, 0.0, 0.0)), scr_c + Vector((0, 0.005, 0)), 40, dist(pov, scr_c))
+    pov = eyes + (scr_c - eyes) * 0.12 + Vector((-0.07, 0.02, 0.025))
+    cam, tgt = make_cam('CAM_S2b', 50, 5.0)
+    key_cam(cam, tgt, 151, pov + Vector((0.01, 0.02, 0.01)), scr_c, 48, dist(pov, scr_c))
+    key_cam(cam, tgt, 216, pov, scr_c + Vector((0, 0.005, 0)), 52, dist(pov, scr_c))
     handheld(cam, 0.0015, 30, 2)
     cams['CAM_S2b'] = cam
-    cam, tgt = make_cam('CAM_S3b', 42, 5.6)
-    key_cam(cam, tgt, 265, pov, scr_c + Vector((0, 0.008, 0)), 42, dist(pov, scr_c))
-    key_cam(cam, tgt, 300, pov + (scr_c - pov) * 0.12, scr_c + Vector((0, 0.016, 0)), 50, dist(pov, scr_c) * 0.88)
+    cam, tgt = make_cam('CAM_S3b', 55, 6.3)
+    key_cam(cam, tgt, 265, pov, scr_c + Vector((0, 0.008, 0)), 55, dist(pov, scr_c))
+    key_cam(cam, tgt, 300, pov + (scr_c - pov) * 0.08, scr_c + Vector((0, 0.016, 0)), 66, dist(pov, scr_c) * 0.92)
     handheld(cam, 0.001, 30, 3)
     cams['CAM_S3b'] = cam
 
@@ -525,8 +525,8 @@ def cameras(objs, setobjs, phone, info):
     # S3c — extreme close-up of the eyes, slow push (face-relative, eye line level)
     cam = plain_cam('CAM_S3c', 70, 3.5)
     e0, up0, fwd0, left0 = face_frame(rig, 301)
-    base = e0 + fwd0 * 0.24 + left0 * 0.09 + up0 * 0.06
-    pend = e0 + fwd0 * 0.19 + left0 * 0.075 + up0 * 0.05
+    base = e0 + fwd0 * 0.36 + left0 * 0.12 + up0 * 0.08
+    pend = e0 + fwd0 * 0.29 + left0 * 0.10 + up0 * 0.065
     aim_cam(cam, list(range(301, 361, 6)) + [360],
             lambda f, e, up, fwd, left: base.lerp(pend, (f - 301) / 59), rig,
             lambda f: 68 + 14 * (f - 301) / 59)

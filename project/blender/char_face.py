@@ -153,7 +153,8 @@ def eye_materials():
     N, L = U.nodes(m); p = U.principled(m)
     img = N.new('ShaderNodeTexImage'); img.image = bpy.data.images.load(path, check_existing=True)
     L.new(img.outputs['Color'], p.inputs['Base Color'])
-    p.inputs['Roughness'].default_value = 0.35
+    p.inputs['Roughness'].default_value = 0.5
+    p.inputs['Specular IOR Level'].default_value = 0.25
     p.inputs['Subsurface Weight'].default_value = 0.15
     p.inputs['Subsurface Radius'].default_value = (1, 0.5, 0.4)
     p.inputs['Subsurface Scale'].default_value = 0.001
@@ -166,7 +167,7 @@ def eye_materials():
     fr = nt.nodes.new('ShaderNodeFresnel'); fr.inputs['IOR'].default_value = 1.45
     add = nt.nodes.new('ShaderNodeMixShader')
     mx = nt.nodes.new('ShaderNodeMath'); mx.operation = 'MULTIPLY_ADD'
-    nt.links.new(fr.outputs[0], mx.inputs[0]); mx.inputs[1].default_value = 0.45; mx.inputs[2].default_value = 0.025
+    nt.links.new(fr.outputs[0], mx.inputs[0]); mx.inputs[1].default_value = 0.16; mx.inputs[2].default_value = 0.008
     nt.links.new(mx.outputs[0], add.inputs[0])
     nt.links.new(tr.outputs[0], add.inputs[1]); nt.links.new(gl.outputs[0], add.inputs[2])
     nt.links.new(add.outputs[0], o.inputs[0])
