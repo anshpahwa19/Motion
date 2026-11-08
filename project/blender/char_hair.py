@@ -7,13 +7,15 @@ import char_face as CF
 from sdf import mesh_sdf, sdf_normal, smax, value_noise3
 
 CROWN = np.array([0.0, 0.045, 0.088])
+VARIANT = {}   # {'len': 0.8, 'recede': 0.02, 'melanin': 0.2, 'random': 0.3}
 
 
 def hairline(P):
     """>0 where the scalp grows hair."""
     a = np.arctan2(P[:, 0], -P[:, 1])      # 0 = front, +-pi = back
     aa = np.abs(a)
-    z_front = 0.060 - 0.010 * (aa / 0.55) ** 2
+    rec = VARIANT.get('recede', 0.0)
+    z_front = 0.060 + rec - 0.010 * (aa / 0.55) ** 2 + rec * 0.6 * np.clip(aa / 0.6, 0, 1)
     z_temple = np.interp(aa, [0.55, 0.95, 1.12, 1.28, 1.45, 1.95, 2.4, np.pi],
                          [0.050, 0.044, 0.020, -0.012, 0.030, 0.022, -0.035, -0.062])
     zl = np.where(aa < 0.55, z_front, z_temple)
@@ -60,7 +62,7 @@ def lengths(P, rng):
     top = np.clip((P[:, 2] - 0.03) / 0.04, 0, 1)
     front = np.clip(1 - a / 1.4, 0, 1)
     L = 0.020 + top * (0.030 + 0.022 * front)
-    return L * rng.uniform(0.85, 1.12, len(P))
+    return L * VARIANT.get('len', 1.0) * rng.uniform(0.85, 1.12, len(P))
 
 
 def grow(roots, fn, rng, nseg=9, jitter=None, lift=None):
@@ -93,7 +95,7 @@ def grow(roots, fn, rng, nseg=9, jitter=None, lift=None):
 
 def build_hair(coll, n_guides=520, n_children=22000, seed=21):
     rng = np.random.default_rng(seed)
-    capm = U.simple_mat('ARJ_HairCapMat', U.hex2lin('#120c09'), rough=0.55)
+    capm = U.simple_mat('ARJ_HairCapMat', U.hex2lin(VARIANT.get('cap', '#120c09')), rough=0.55)
     cap = build_cap(coll, capm)
     v = U.mesh_verts(cap)
     f = np.array([p.vertices[:] for p in cap.data.polygons])
@@ -123,7 +125,9 @@ def build_hair(coll, n_guides=520, n_children=22000, seed=21):
         push = np.maximum(0.0010 - dd, 0)
         child[:, k] = p + sdf_normal(fn, p) * push[:, None]
     strands = list(child) + list(G)
-    hm = CF.hair_material('ARJ_HairMat', melanin=0.975, redness=0.2, rough=0.44, coat=0.0)
+    hm = CF.hair_material('ARJ_HairMat', melanin=VARIANT.get('melanin', 0.975), redness=0.2, rough=0.44, coat=0.0)
+    if VARIANT.get('random'):
+        hm.node_tree.nodes['Principled Hair BSDF'].inputs['Random Color'].default_value = VARIANT['random']
     rr = rng.uniform(0.00009, 0.00014, len(strands))
     hair = CF.hair_curves_obj('ARJ_Hair', strands, rr, 0.00002, coll, hm)
     return cap, hair

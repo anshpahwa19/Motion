@@ -40,9 +40,14 @@ for f in frames:
     path = os.path.join(a.out, f'f{f:04d}.png')
     if a.skip_existing and os.path.exists(path):
         continue
-    shot = next((s for s in T.SHOTS if s[1] <= f <= s[2]), None)
-    if shot and shot[4] and shot[4] in bpy.data.objects:
-        sc.camera = bpy.data.objects[shot[4]]
+    if a.scene in ('Bedroom', 'Office'):
+        shot = next((s for s in T.SHOTS if s[1] <= f <= s[2]), None)
+        if shot and shot[4] and shot[4] in bpy.data.objects:
+            sc.camera = bpy.data.objects[shot[4]]
+    else:
+        mk = [m for m in sc.timeline_markers if m.frame <= f and m.camera]
+        if mk:
+            sc.camera = max(mk, key=lambda m: m.frame).camera
     sc.frame_set(f)
     sc.render.filepath = path
     t = time.time()

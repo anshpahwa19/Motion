@@ -13,8 +13,12 @@ def mirror_x(P):
     Q = P.copy(); Q[:, 0] = np.abs(Q[:, 0]); return Q
 
 
+VARIANT = {}   # e.g. {'age': 1.0, 'nose': 1.15, 'cheek': 1.0} for other characters
+
+
 def head_sdf(P, socket=True, neck=True):
     M = mirror_x(P)              # symmetric features evaluated on |x|
+    V = VARIANT
     # --- big masses
     d = ellipsoid(P, (0, 0.006, 0.028), (0.075, 0.094, 0.092))          # cranium
     d = smin(d, ellipsoid(P, (0, -0.036, 0.044), (0.068, 0.056, 0.060)), 0.02)  # forehead
@@ -48,6 +52,20 @@ def head_sdf(P, socket=True, neck=True):
     # --- neck
     if neck:
         d = smin(d, round_cone(P, (0, 0.020, -0.080), (0, 0.024, -0.21), 0.052, 0.057), 0.014)
+    # --- character variants (age: jowls, folds, bags; bigger nose; fuller cheeks)
+    age = V.get('age', 0.0)
+    if V.get('nose', 1.0) != 1.0:
+        k = V['nose']
+        d = smin(d, sphere(P, (0, -0.1005 - 0.004 * (k - 1), -0.0305), 0.0122 * k), 0.006)
+        d = smin(d, ellipsoid(M, (0.0145 * k, -0.0895, -0.0355), (0.0085 * k, 0.0095, 0.0075)), 0.005)
+    if V.get('cheek', 0.0):
+        d = smin(d, ellipsoid(M, (0.040, -0.050, -0.045), (0.024, 0.022, 0.026)), 0.02)
+    if age:
+        d = smin(d, ellipsoid(M, (0.040, -0.040, -0.080), (0.020 * age, 0.024, 0.020 * age)), 0.02)   # jowls
+        d = smin(d, ellipsoid(M, (0.031, -0.077, -0.018), (0.012, 0.006 * age, 0.0045)), 0.006)       # eye bags
+        d = ssub(d, capsule(M, (0.019, -0.093, -0.036), (0.030, -0.080, -0.068), 0.0012 * age), 0.003)  # nasolabial
+        d = ssub(d, capsule(P, (-0.03, -0.090, 0.046), (0.03, -0.090, 0.046), 0.0006 * age), 0.002)     # forehead line
+        d = ssub(d, capsule(P, (-0.026, -0.088, 0.056), (0.026, -0.088, 0.056), 0.0005 * age), 0.002)
     # --- eye sockets (lids are separate shells)
     if socket:
         for E in (EYE_L, EYE_RT):

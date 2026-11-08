@@ -47,3 +47,29 @@ def make_skyline(path, W=4096, Hh=1536, seed=4):
     # store as HDR-ish via EXR-less approach: PNG with gamma, strength boosted in shader
     srgb = np.clip(img / 2.5, 0, 1) ** (1 / 2.2)
     Image.fromarray((srgb * 255).astype(np.uint8)).save(path)
+
+
+def make_skyline_day(path, W=4096, Hh=1536, seed=6):
+    rng = np.random.default_rng(seed)
+    yy = np.linspace(0, 1, Hh)[:, None]
+    top = np.array([0.30, 0.52, 0.86]); hor = np.array([0.86, 0.90, 0.94])
+    sky = top * (1 - yy) ** 1.5 + hor * (1 - (1 - yy) ** 1.5)
+    img = np.broadcast_to(sky.reshape(Hh, 1, 3), (Hh, W, 3)).copy()
+    horizon = int(Hh * 0.86)
+    for layer, (hmin, hmax, tone) in enumerate([(0.05, 0.22, 0.78), (0.08, 0.32, 0.66), (0.12, 0.42, 0.52)]):
+        x = 0
+        while x < W:
+            bw = int(rng.uniform(60, 220) * (0.6 + 0.4 * layer)); bh = int(Hh * rng.uniform(hmin, hmax))
+            top_y = horizon - bh + int(layer * 40)
+            base = np.array([0.62, 0.66, 0.72]) * tone * rng.uniform(0.85, 1.1)
+            img[top_y:, x:x + bw] = base
+            wx, wy = rng.integers(10, 16), rng.integers(14, 22)
+            for yy0 in range(top_y + 12, Hh - 4, wy):
+                img[yy0:yy0 + 2, x + 4:x + bw - 4] *= 0.9
+            for xx0 in range(x + 6, x + bw - 8, wx):
+                img[top_y + 8:, xx0:xx0 + 2] *= 0.93
+            x += bw + int(rng.uniform(0, 40))
+    haze = np.clip((yy - 0.5) / 0.5, 0, 1)[..., None] * 0.25
+    img = img * (1 - haze.reshape(Hh, 1, 1)) + np.array([0.85, 0.88, 0.92]) * haze.reshape(Hh, 1, 1)
+    srgb = np.clip(img, 0, 1) ** (1 / 2.2)
+    Image.fromarray((srgb * 255).astype(np.uint8)).save(path)

@@ -13,6 +13,8 @@ J = {
     'neck': (0, 0.02, 0.50), 'head': (0, 0.018, 0.598), 'head_end': (0, 0.0, 0.80),
     'shoulder.R': (-0.168, 0.015, 0.468), 'elbow.R': (-0.214, 0.035, 0.188),
     'wrist.R': (-0.244, 0.002, -0.058),
+    'hip.R': (-0.088, 0.008, -0.035), 'knee.R': (-0.098, -0.004, -0.475),
+    'ankle.R': (-0.104, 0.022, -0.895), 'toe.R': (-0.110, -0.105, -0.94),
 }
 for k in list(J):
     if k.endswith('.R'):
@@ -111,10 +113,15 @@ def skin_sdf(P):
 SKIN_BBOX = ((-0.33, -0.16, -0.27), (0.33, 0.16, 0.56))
 
 
+VARIANT = {}     # {'belly': 1.1}
+
+
 def tee_sdf(P):
     s = []
+    bel = VARIANT.get('belly', 1.0)
     torso = smin(ellipsoid(P, (0, 0.012, 0.35), (0.172, 0.106, 0.18)),
-                 ellipsoid(P, (0, 0.006, 0.12), (0.150, 0.098, 0.19)), 0.06)
+                 ellipsoid(P, (0, 0.006 - 0.012 * (bel - 1), 0.12), (0.150 * bel, 0.098 * bel, 0.19)), 0.06)
+    torso = smin(torso, round_cone(P, (0, 0.006, 0.16), (0, 0.006, -0.07), 0.148 * bel, 0.150 * bel), 0.04)
     for side in ('R', 'L'):
         sh, el = J['shoulder.' + side], J['elbow.' + side]
         torso = smin(torso, sphere(P, sh + np.array([0.012 * np.sign(sh[0]) * -1, 0, -0.004]), 0.056), 0.05)
@@ -159,3 +166,54 @@ def soft_weights(parts, tau):
     W[W < 0.02] = 0
     W /= W.sum(1, keepdims=True)
     return names, W
+
+
+# ------------------------------------------------------------------ legs
+def leg_parts(P):
+    bel = VARIANT.get('belly', 1.0)
+    parts = {'pelvis': smin(ellipsoid(P, (0, 0.012, -0.03), (0.146 * bel, 0.100 * bel, 0.115)),
+                            round_cone(P, (0, 0.006, 0.05), (0, 0.01, -0.06), 0.140 * bel, 0.146), 0.03)}
+    for s in ('L', 'R'):
+        h, k, a = J['hip.' + s], J['knee.' + s], J['ankle.' + s]
+        parts['thigh.' + s] = round_cone(P, h, k, 0.084, 0.058)
+        sh = round_cone(P, k, a, 0.056, 0.044)
+        parts['shin.' + s] = smin(sh, ellipsoid(P, k + (a - k) * 0.3 + np.array([0, 0.015, 0]), (0.05, 0.05, 0.11)), 0.03)
+    return parts
+
+
+def pants_sdf(P):
+    parts = leg_parts(P)
+    d = None
+    for v in parts.values():
+        d = v if d is None else smin(d, v, 0.035)
+    d = d - 0.006 + 0.0022 * value_noise3(P, 26, 5) + 0.001 * value_noise3(P, 70, 6)
+    d = smax(d, P[:, 2] - 0.045, 0.004)                         # waistband (under the tee)
+    for s in ('L', 'R'):
+        a = J['ankle.' + s]
+        hem = np.where(np.abs(P[:, 0] - a[0]) < 0.12, (a[2] + 0.035) - P[:, 2], -1)
+        d = smax(d, hem, 0.003)
+    return d
+
+
+PANTS_BBOX = ((-0.26, -0.16, -0.90), (0.26, 0.16, 0.08))
+
+
+def feet_parts(P):
+    out = {}
+    for s in ('L', 'R'):
+        a, t = J['ankle.' + s], J['toe.' + s]
+        f = smin(round_cone(P, a + np.array([0, 0.035, -0.035]), t + np.array([0, 0, 0.0]), 0.038, 0.032),
+                 round_cone(P, a + np.array([0, 0.0, 0.05]), a + np.array([0, 0.01, -0.02]), 0.042, 0.045), 0.03)
+        out['foot.' + s] = f
+        out['shin.' + s] = round_cone(P, a + np.array([0, 0, 0.12]), a + np.array([0, 0, 0.05]), 0.045, 0.043)
+    return out
+
+
+def feet_sdf(P):
+    d = None
+    for v in feet_parts(P).values():
+        d = v if d is None else smin(d, v, 0.02)
+    return d
+
+
+FEET_BBOX = ((-0.20, -0.17, -0.99), (0.20, 0.09, -0.74))

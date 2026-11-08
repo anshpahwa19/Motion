@@ -45,10 +45,10 @@ def scale_data(ob, s=HS):
         ch.location = ch.location / s * s
 
 
-def tee_material():
+def tee_material(color='#3d5862'):
     m = U.new_mat('ARJ_Tee')
     N, L = U.nodes(m); p = U.principled(m)
-    col = U.hex2lin('#3d5862')
+    col = U.hex2lin(color)
     tc = N.new('ShaderNodeTexCoord')
     wave = N.new('ShaderNodeTexWave'); wave.inputs['Scale'].default_value = 900
     wave.inputs['Distortion'].default_value = 2; wave.bands_direction = 'DIAGONAL'
@@ -107,6 +107,9 @@ def bone_specs():
         sx = 1 if s == 'L' else -1
         piv = E0 + HS * np.array([0.056 * sx, -0.066, 0.020])
         S['brow.' + s] = (piv, piv + np.array([0, -0.015, 0]), 'head', up)
+        S['thigh.' + s] = (B.J['hip.' + s], B.J['knee.' + s], 'pelvis', fwd)
+        S['shin.' + s] = (B.J['knee.' + s], B.J['ankle.' + s], 'thigh.' + s, fwd)
+        S['foot.' + s] = (B.J['ankle.' + s], B.J['toe.' + s], 'shin.' + s, up)
     return S
 
 
@@ -148,7 +151,140 @@ def add_armature_mod(ob, rig):
 
 
 # ----------------------------------------------------------------- build
-def build_arjun(coll, hair=True, lod=1.0):
+def mouth_shape_keys(head):
+    """Analytic facial shapes on the (scaled) head mesh: smile, frown, jaw_open, sneer-free."""
+    me = head.data
+    V = U.mesh_verts(head) / HS                          # head-local
+    if not me.shape_keys:
+        head.shape_key_add(name='Basis', from_mix=False)
+    def g(c, r):
+        q = (V - np.array(c)) / np.array(r); return np.exp(-np.einsum('ij,ij->i', q, q))
+    M = V.copy(); M[:, 0] = np.abs(M[:, 0])
+    sx = np.sign(V[:, 0])
+    def gm(c, r):
+        q = (M - np.array(c)) / np.array(r); return np.exp(-np.einsum('ij,ij->i', q, q))
+    front = np.clip((-V[:, 1] - 0.03) / 0.03, 0, 1)
+    shapes = {}
+    w = gm((0.022, -0.078, -0.061), (0.011, 0.02, 0.009)) * front
+    ck = gm((0.035, -0.062, -0.035), (0.016, 0.03, 0.014)) * front
+    shapes['smile'] = np.c_[sx * 0.0022 * w, 0.0018 * w + 0.0008 * ck, 0.0030 * w + 0.0014 * ck]
+    shapes['frown'] = np.c_[sx * -0.0008 * w, 0.0004 * w, -0.0026 * w]
+    jaw = np.clip((-0.0615 - V[:, 2]) / 0.006, 0, 1) * np.clip((0.03 - V[:, 1]) / 0.04, 0, 1) * np.clip((V[:, 2] + 0.16) / 0.04, 0, 1)
+    ang = np.radians(7) * jaw
+    piv = np.array([0, 0.012, -0.035])
+    q = V - piv
+    ny = q[:, 1] * np.cos(ang) + q[:, 2] * np.sin(ang)
+    nz = -q[:, 1] * np.sin(ang) + q[:, 2] * np.cos(ang)
+    shapes['jaw_open'] = np.c_[np.zeros(len(V)), ny + piv[1] - V[:, 1], nz + piv[2] - V[:, 2]]
+    lipup = g((0, -0.085, -0.057), (0.016, 0.015, 0.004)) * front
+    shapes['lips_part'] = np.c_[np.zeros(len(V)), np.zeros(len(V)), 0.0012 * lipup]
+    for name, d in shapes.items():
+        sk = head.shape_key_add(name=name, from_mix=False)
+        sk.data.foreach_set('co', ((V + d) * HS).astype(np.float32).ravel())
+        sk.value = 0.0
+
+
+def build_lower_body(coll, rig, objs, skin, lod=1.0, pants_color='#2f3540', feet_mat=None):
+    v, f = mesh_sdf(B.pants_sdf, *B.PANTS_BBOX, 0.0024 / lod)
+    pm = U.new_mat(f'{PREFIX}_Pants'); p = U.principled(pm)
+    N, L = U.nodes(pm)
+    nz = N.new('ShaderNodeTexNoise'); nz.inputs['Scale'].default_value = 300
+    mx = N.new('ShaderNodeMix'); mx.data_type = 'RGBA'
+    c = np.array(U.hex2lin(pants_color)); mx.inputs['A'].default_value = (*c, 1); mx.inputs['B'].default_value = (*(c * 0.75), 1)
+    L.new(nz.outputs['Fac'], mx.inputs['Factor']); L.new(mx.outputs['Result'], p.inputs['Base Color'])
+    p.inputs['Roughness'].default_value = 0.85; p.inputs['Sheen Weight'].default_value = 0.4
+    pants = U.mesh_obj(f'{PREFIX}_Pants', v, f, coll, mat=pm)
+    U.smooth_mesh(pants, 1, 0.4)
+    V = U.mesh_verts(pants)
+    names, W = B.soft_weights(B.leg_parts(V), 0.016)
+    for i, n in enumerate(names):
+        U.vgroup_weights(pants, n, W[:, i])
+    add_armature_mod(pants, rig)
+    v, f = mesh_sdf(B.feet_sdf, *B.FEET_BBOX, 0.0022 / lod)
+    feet = U.mesh_obj(f'{PREFIX}_Feet', v, f, coll, mat=feet_mat or skin)
+    V = U.mesh_verts(feet)
+    names, W = B.soft_weights(B.feet_parts(V), 0.012)
+    for i, n in enumerate(names):
+        U.vgroup_weights(feet, n, W[:, i])
+    if feet_mat is None:
+        col = body_skin_maps(V); U.set_color_attr(feet, 'skin_col', col); U.set_float_attr(feet, 'stubble', np.zeros(len(V)))
+    add_armature_mod(feet, rig)
+    objs['pants'] = pants; objs['feet'] = feet
+
+
+PREFIX = 'ARJ'
+
+
+def build_moustache(coll, head_parent_fn, melanin=0.9, random=0.3, seed=31):
+    """Groomed moustache strands (head-local, then scaled + bone-parented by caller)."""
+    import char_head as H
+    rng = np.random.default_rng(seed)
+    fn = lambda P: H.head_sdf(P, socket=False, neck=False)
+    n = 2600
+    x = rng.uniform(-0.025, 0.025, n); z = -0.0535 + rng.normal(0, 0.0028, n) + 0.006 * (np.abs(x) / 0.025) ** 2
+    P = np.c_[x, np.full(n, -0.12), z]
+    for _ in range(40):
+        d = fn(P); P[:, 1] += np.maximum(d, 0) * 0.9
+    from char_face import surface_project, hair_curves_obj, hair_material
+    P = surface_project(fn, P, 0.0002)
+    strands = []
+    for i in range(n):
+        dirw = np.array([np.sign(x[i]) * 0.35 * abs(x[i]) / 0.025, -0.25, -1.0]) + rng.normal(0, 0.15, 3)
+        L = rng.uniform(0.004, 0.0085)
+        pts = [P[i]]; p = P[i].copy()
+        for k in range(4):
+            from sdf import sdf_normal
+            nrm = sdf_normal(fn, p[None])[0]
+            t = dirw - nrm * (dirw @ nrm); t /= np.linalg.norm(t)
+            p = p + t * L / 4 + nrm * 0.0004 * (k == 0); pts.append(p.copy())
+        strands.append(np.array(pts))
+    m = hair_material(f'{PREFIX}_MoustacheMat', melanin, 0.15, 0.4)
+    m.node_tree.nodes['Principled Hair BSDF'].inputs['Random Color'].default_value = random
+    return hair_curves_obj(f'{PREFIX}_Moustache', strands, 0.00009, 0.00002, coll, m)
+
+
+def build_glasses(coll):
+    """Thin metal reading glasses in head-local space."""
+    import char_head as H
+    metal = U.simple_mat(f'{PREFIX}_GlassesMetal', U.hex2lin('#3a3530'), rough=0.3, metal=0.9)
+    lens = U.new_mat(f'{PREFIX}_GlassesLens'); nt = lens.node_tree; nt.nodes.clear()
+    o = nt.nodes.new('ShaderNodeOutputMaterial'); tr = nt.nodes.new('ShaderNodeBsdfTransparent')
+    gl = nt.nodes.new('ShaderNodeBsdfGlossy'); gl.inputs['Roughness'].default_value = 0.02
+    mx = nt.nodes.new('ShaderNodeMixShader'); mx.inputs[0].default_value = 0.08
+    nt.links.new(tr.outputs[0], mx.inputs[1]); nt.links.new(gl.outputs[0], mx.inputs[2]); nt.links.new(mx.outputs[0], o.inputs[0])
+    objs = []
+    yfr = H.EYE_L[1] - H.EYE_R if False else H.EYE_L[1] - 0.030
+    for sx in (1, -1):
+        cx = H.EYE_L[0] * sx; cz = -0.002
+        cu = bpy.data.curves.new(f'{PREFIX}_Rim', 'CURVE'); cu.dimensions = '3D'; cu.bevel_depth = 0.0009
+        sp = cu.splines.new('POLY'); n = 40; sp.points.add(n - 1)
+        for i in range(n):
+            a = 2 * np.pi * i / n
+            sp.points[i].co = (cx + 0.0215 * np.cos(a), yfr - 0.002 * np.cos(a) ** 2, cz + 0.0150 * np.sin(a) - 0.002 * (np.sin(a) < 0), 1)
+        sp.use_cyclic_u = True
+        rim = bpy.data.objects.new(f'{PREFIX}_GlassRim', cu); coll.objects.link(rim); cu.materials.append(metal)
+        V = [(cx + 0.0205 * np.cos(2 * np.pi * i / 32), yfr, cz + 0.0142 * np.sin(2 * np.pi * i / 32)) for i in range(32)]
+        ln = U.mesh_obj(f'{PREFIX}_GlassLens', V + [(cx, yfr - 0.0015, cz)], [[i, (i + 1) % 32, 32] for i in range(32)], coll, mat=lens)
+        objs += [rim, ln]
+        # temple arm
+        cu2 = bpy.data.curves.new(f'{PREFIX}_Temple', 'CURVE'); cu2.dimensions = '3D'; cu2.bevel_depth = 0.0010
+        sp2 = cu2.splines.new('POLY'); sp2.points.add(2)
+        for i, co in enumerate(((cx + 0.0215 * sx, yfr, cz + 0.004), (0.071 * sx, -0.02, 0.006), (0.077 * sx, 0.03, -0.012))):
+            sp2.points[i].co = (*co, 1)
+        tm = bpy.data.objects.new(f'{PREFIX}_GlassTemple', cu2); coll.objects.link(tm); cu2.materials.append(metal); objs.append(tm)
+    cu3 = bpy.data.curves.new(f'{PREFIX}_Bridge', 'CURVE'); cu3.dimensions = '3D'; cu3.bevel_depth = 0.0009
+    sp3 = cu3.splines.new('BEZIER'); sp3.bezier_points.add(1)
+    for bp, co in zip(sp3.bezier_points, ((-H.EYE_L[0] + 0.0215, yfr, 0.003), (H.EYE_L[0] - 0.0215, yfr, 0.003))):
+        bp.co = co; bp.handle_left_type = bp.handle_right_type = 'AUTO'
+    sp3.bezier_points[0].handle_right = (0, yfr - 0.004, 0.008); sp3.bezier_points[1].handle_left = (0, yfr - 0.004, 0.008)
+    br = bpy.data.objects.new(f'{PREFIX}_GlassBridge', cu3); coll.objects.link(br); cu3.materials.append(metal); objs.append(br)
+    return objs
+
+
+def build_arjun(coll, hair=True, lod=1.0, legs=False, tee_color='#3d5862', pants_color='#2f3540',
+                brow_melanin=0.95, moustache=None, glasses=False, prefix='ARJ'):
+    global PREFIX
+    PREFIX = prefix
     objs = {}
     rig = build_rig(coll)
     objs['rig'] = rig
@@ -160,6 +296,7 @@ def build_arjun(coll, hair=True, lod=1.0):
     wn = (1 - wh) * np.clip((z + 0.20) / 0.05, 0, 1)
     wc = 1 - wh - wn
     scale_data(head); head.location = E0
+    mouth_shape_keys(head)
     U.vgroup_weights(head, 'head', wh); U.vgroup_weights(head, 'neck', wn); U.vgroup_weights(head, 'chest', wc)
     add_armature_mod(head, rig)
     objs['head'] = head
@@ -167,7 +304,7 @@ def build_arjun(coll, hair=True, lod=1.0):
     # --- eyes, lids, lashes, brows (rigid, bone-parented)
     em, cm = CF.eye_materials()
     lashm = CF.hair_material('ARJ_Lash', 0.98, 0.2, 0.4)
-    browm = CF.hair_material('ARJ_BrowHair', 0.95, 0.3, 0.35)
+    browm = CF.hair_material('ARJ_BrowHair', brow_melanin, 0.3, 0.35)
     for s in 'LR':
         eye = CF.build_eye(coll, s, em, cm)
         scale_data(eye)
@@ -206,7 +343,7 @@ def build_arjun(coll, hair=True, lod=1.0):
     objs['body'] = body
     # --- T-shirt
     v, f = mesh_sdf(B.tee_sdf, *B.TEE_BBOX, 0.0017 / lod)
-    tee = U.mesh_obj('ARJ_Tee', v, f, coll, mat=tee_material())
+    tee = U.mesh_obj('ARJ_Tee', v, f, coll, mat=tee_material(tee_color))
     U.smooth_mesh(tee, 1, 0.4)
     V = U.mesh_verts(tee)
     names, W = B.soft_weights(B.tee_parts(V), 0.012)
@@ -217,6 +354,20 @@ def build_arjun(coll, hair=True, lod=1.0):
     U.vgroup_weights(tee, 'breath', 0.6 * br)
     add_armature_mod(tee, rig)
     objs['tee'] = tee
+    if legs:
+        build_lower_body(coll, rig, objs, skin, lod, pants_color)
+    if moustache:
+        mo = build_moustache(coll, None, **moustache)
+        scale_data(mo); mo.location = Vector(E0) + mo.location
+        bone_parent(mo, rig, 'head'); objs['moustache'] = mo
+    if glasses:
+        for g in build_glasses(coll):
+            if g.type == 'MESH':
+                scale_data(g)
+            else:
+                g.scale = (HS, HS, HS); g.location = g.location * HS
+            g.location = Vector(E0) + g.location
+            bone_parent(g, rig, 'head')
     # --- IK controls
     ctrl = {}
     for s in 'LR':

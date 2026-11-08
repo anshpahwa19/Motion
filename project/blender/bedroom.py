@@ -276,11 +276,11 @@ def animate_curtains(curtains, frames):
         ob.modifiers.move(len(ob.modifiers) - 1, 0)
 
 
-def build_skyline(coll):
+def build_skyline(coll, day=False):
     import skyline
-    path = os.path.join(TEX, 'city_skyline.png')
+    path = os.path.join(TEX, 'city_day.png' if day else 'city_skyline.png')
     if not os.path.exists(path):
-        skyline.make_skyline(path)
+        (skyline.make_skyline_day if day else skyline.make_skyline)(path)
     m = U.new_mat('SET_Skyline'); nt = m.node_tree; nt.nodes.clear()
     o = nt.nodes.new('ShaderNodeOutputMaterial')
     e = nt.nodes.new('ShaderNodeEmission'); e.inputs['Strength'].default_value = 1.6
@@ -564,16 +564,16 @@ def setup_world(scene):
     bg.inputs['Color'].default_value = (0.004, 0.006, 0.014, 1); bg.inputs['Strength'].default_value = 1.0
 
 
-def build_bedroom(coll, frames, body_top_fn, head_dent):
+def build_bedroom(coll, frames, body_top_fn, head_dent, clock='2:17', day=False):
     build_shell(coll)
     curt = build_window(coll)
     animate_curtains(curt, frames)
-    build_skyline(coll)
+    build_skyline(coll, day)
     build_bed(coll)
     pillows = build_pillows(coll, head_dent)
     blanket = build_blanket(coll, body_top_fn)
     build_table(coll)
-    clock = build_clock(coll)
+    clock = build_clock(coll, clock)
     fan = build_fan(coll, frames)
     build_wardrobe(coll)
     build_chair(coll)
