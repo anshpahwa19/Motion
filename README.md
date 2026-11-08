@@ -1,3 +1,43 @@
+# THE LAST LOGIN — full short film (~3:05)
+
+| | |
+|---|---|
+| **Film** | `output/THE_LAST_LOGIN_Full_Film_1080p.mp4` — 1920×1080, 24 fps, H.264 + AAC stereo, ~3:05 (rendered at 960×540 in Cycles, upscaled to 1080p) |
+| **Production files** | `source/` — scene01 (bedroom + fear flashes), scene02a (morning bedroom), scenes02-05 office (rebuilt by `build_office.py`, >100 MB), scene06 (calm night), `source/characters/` (Arjun, Mr. Rao, two colleagues) |
+| **Edit / timing** | `project/config/film_timing.py` — EDL, shot list, narration placement |
+
+## Story
+1. **The Fear Never Sleeps** — 2:17 AM, headlines about AI, the fear flashes.
+2. **Another Day, Another Fear** — the alarm at 7:30, sitting on the bed edge, present at his desk but absent.
+3. **The Machine That Never Stops** — an AI tool generates 24 screens in 9.8 s; doubt.
+4. **The Human Factor** — a usability test with Mr. Rao, 62, who gets lost in the AI-generated banking app.
+5. **A Different Way Forward** — Arjun brings the research into the AI tool; Mr. Rao pays in 38 seconds.
+6. **Tomorrow Is Another Day** — another AI headline, a calm smile, lamp off, sleep.
+End cards: *AI may change your job…* · **DON'T COMPETE WITH AI. LEARN TO CREATE WITH IT.** · *Because technology can generate answers, but meaningful questions still need people.* · title.
+
+## Rebuild the full film
+```bash
+cd project/blender
+```
+```bash
+for c in arjun rao colleague_a colleague_b; do python build_characters.py -- $c; done
+```
+```bash
+python build_s2bed.py && python build_office.py && python build_s6.py
+```
+```bash
+python ../ui/film_screens.py
+```
+Render each file with `render_frames.py` (`--res 50 --spp 5 --no-mblur` was used), then:
+```bash
+cd ../audio && python film_vo.py kokoro-v1.0.onnx voices-v1.0.bin && python film_sound.py
+```
+```bash
+cd ../post && python film_edit.py <renders_root> <frames_out> && ./encode.sh <frames_out> ../assets/audio/film_mix.wav ../../output/THE_LAST_LOGIN_Full_Film_1080p.mp4
+```
+
+---
+
 # THE LAST LOGIN — Scene 1: *The Fear Never Sleeps*
 
 An animated short about Arjun, a 28-year-old UX designer who can't sleep because

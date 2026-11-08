@@ -3,7 +3,7 @@
 # usage: encode.sh <frames_dir> <mix.wav> <out.mp4>
 set -e
 FR=$1; MIX=$2; OUT=$3
-ffmpeg -y -hide_banner -loglevel error -framerate 24 -i "$FR/f%04d.png" -i "$MIX" \
+ffmpeg -y -hide_banner -loglevel error -framerate 24 -i "$FR/f%05d.png" -i "$MIX" \
   -vf "hqdn3d=0.8:0.8:3.5:3.5,noise=alls=7:allf=t+u,format=yuv420p" \
   -af "loudnorm=I=-16:TP=-1.5:LRA=11" \
   -c:v libx264 -preset slow -crf 20 -profile:v high -tune film -pix_fmt yuv420p \

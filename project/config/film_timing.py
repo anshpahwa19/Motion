@@ -65,3 +65,41 @@ SCENE_STARTS = {  # for scene title-free chaptering in the audio/score
 
 if __name__ == '__main__':
     t = total_frames(); print(t, 'frames =', t / FPS, 's')
+
+
+def offsets():
+    """film start frame (1-based) of every EDL shot name."""
+    out, f = {}, 1
+    for e in EDL:
+        out[e[0]] = f
+        f += e[3] - e[2] + 1
+    return out
+
+
+def at(shot, sec_into=0.0):
+    """film time (s) for a moment inside a shot."""
+    return (offsets()[shot] - 1) / FPS + sec_into
+
+
+# (shot, seconds into shot, text, voice)
+FILM_VO = [
+    ('2a_morning_wide', 0.6, "Every morning, he goes to work...", 'narrator'),
+    ('2c_bed_edge', 0.4, "wondering if today could be his last day.", 'narrator'),
+    ('2e_desk_side', 1.2, "He's there.", 'narrator'),
+    ('2f_present_absent', 0.3, "But his mind is somewhere else.", 'narrator'),
+    ('3c_face_monitor', 0.5, "The machine never sleeps. It never doubts.", 'narrator'),
+    ('3e_office_wide', 0.6, "It never stops.", 'narrator'),
+    ('3f_doubt', 1.4, "And slowly, he starts to believe it doesn't need him.", 'narrator'),
+    ('4c_rao_cu', 1.9, "Beta... which one sends the money? All these buttons look the same.", 'rao'),
+    ('4d_arjun_realises', 1.9, "But a machine can't sit beside a real person...", 'narrator'),
+    ('4g_arjun_thinks', 0.3, "and notice the exact moment they get lost.", 'narrator'),
+    ('5a_sketch', 0.8, "AI can give him a thousand answers.", 'narrator'),
+    ('5c_face_engaged', 0.3, "His job is to bring the right questions.", 'narrator'),
+    ('5f_golden_wide', 0.2, "He stopped competing with it. He started creating with it.", 'narrator'),
+    ('6b_phone_down', 1.0, "Tomorrow, the machines will be smarter.", 'narrator'),
+    ('6c_lamp_off', 1.6, "So will he.", 'narrator'),
+    ('6e_overhead', 0.2, "And tonight... the fear finally lets him sleep.", 'narrator'),
+    ('E1_card', 0.5, "AI may change your job. But don't let the fear of it take away your ability to grow.", 'narrator'),
+    ('E2_card', 0.4, "Don't compete with AI. Learn to create with it.", 'narrator'),
+    ('E3_card', 0.4, "Because technology can generate answers... but meaningful questions still need people.", 'narrator'),
+]

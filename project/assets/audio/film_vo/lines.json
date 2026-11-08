@@ -1,0 +1,173 @@
+[
+ {
+  "file": "vo_00.wav",
+  "start": 26.1,
+  "dur": 1.9571666666666667,
+  "text": "Every morning, he goes to work...",
+  "voice": "narrator",
+  "sr": 24000,
+  "shot": "2a_morning_wide"
+ },
+ {
+  "file": "vo_01.wav",
+  "start": 32.9,
+  "dur": 2.689125,
+  "text": "wondering if today could be his last day.",
+  "voice": "narrator",
+  "sr": 24000,
+  "shot": "2c_bed_edge"
+ },
+ {
+  "file": "vo_02.wav",
+  "start": 42.2,
+  "dur": 0.968125,
+  "text": "He's there.",
+  "voice": "narrator",
+  "sr": 24000,
+  "shot": "2e_desk_side"
+ },
+ {
+  "file": "vo_03.wav",
+  "start": 46.8,
+  "dur": 2.055375,
+  "text": "But his mind is somewhere else.",
+  "voice": "narrator",
+  "sr": 24000,
+  "shot": "2f_present_absent"
+ },
+ {
+  "file": "vo_04.wav",
+  "start": 61.5,
+  "dur": 2.722125,
+  "text": "The machine never sleeps. It never doubts.",
+  "voice": "narrator",
+  "sr": 24000,
+  "shot": "3c_face_monitor"
+ },
+ {
+  "file": "vo_05.wav",
+  "start": 69.6,
+  "dur": 1.5291666666666666,
+  "text": "It never stops.",
+  "voice": "narrator",
+  "sr": 24000,
+  "shot": "3e_office_wide"
+ },
+ {
+  "file": "vo_06.wav",
+  "start": 75.4,
+  "dur": 3.06725,
+  "text": "And slowly, he starts to believe it doesn't need him.",
+  "voice": "narrator",
+  "sr": 24000,
+  "shot": "3f_doubt"
+ },
+ {
+  "file": "vo_07.wav",
+  "start": 89.9,
+  "dur": 4.687916666666666,
+  "text": "Beta... which one sends the money? All these buttons look the same.",
+  "voice": "rao",
+  "sr": 24000,
+  "shot": "4c_rao_cu"
+ },
+ {
+  "file": "vo_08.wav",
+  "start": 94.9,
+  "dur": 3.0741666666666667,
+  "text": "But a machine can't sit beside a real person...",
+  "voice": "narrator",
+  "sr": 24000,
+  "shot": "4d_arjun_realises"
+ },
+ {
+  "file": "vo_09.wav",
+  "start": 107.8,
+  "dur": 2.7520416666666665,
+  "text": "and notice the exact moment they get lost.",
+  "voice": "narrator",
+  "sr": 24000,
+  "shot": "4g_arjun_thinks"
+ },
+ {
+  "file": "vo_10.wav",
+  "start": 112.8,
+  "dur": 2.769458333333333,
+  "text": "AI can give him a thousand answers.",
+  "voice": "narrator",
+  "sr": 24000,
+  "shot": "5a_sketch"
+ },
+ {
+  "file": "vo_11.wav",
+  "start": 123.3,
+  "dur": 2.627083333333333,
+  "text": "His job is to bring the right questions.",
+  "voice": "narrator",
+  "sr": 24000,
+  "shot": "5c_face_engaged"
+ },
+ {
+  "file": "vo_12.wav",
+  "start": 137.2,
+  "dur": 3.245125,
+  "text": "He stopped competing with it. He started creating with it.",
+  "voice": "narrator",
+  "sr": 24000,
+  "shot": "5f_golden_wide"
+ },
+ {
+  "file": "vo_13.wav",
+  "start": 146.0,
+  "dur": 2.5006666666666666,
+  "text": "Tomorrow, the machines will be smarter.",
+  "voice": "narrator",
+  "sr": 24000,
+  "shot": "6b_phone_down"
+ },
+ {
+  "file": "vo_14.wav",
+  "start": 152.1,
+  "dur": 1.2015,
+  "text": "So will he.",
+  "voice": "narrator",
+  "sr": 24000,
+  "shot": "6c_lamp_off"
+ },
+ {
+  "file": "vo_15.wav",
+  "start": 159.7,
+  "dur": 2.8775,
+  "text": "And tonight... the fear finally lets him sleep.",
+  "voice": "narrator",
+  "sr": 24000,
+  "shot": "6e_overhead"
+ },
+ {
+  "file": "vo_16.wav",
+  "start": 164.0,
+  "dur": 5.52875,
+  "text": "AI may change your job. But don't let the fear of it take away your ability to grow.",
+  "voice": "narrator",
+  "sr": 24000,
+  "shot": "E1_card"
+ },
+ {
+  "file": "vo_17.wav",
+  "start": 169.9,
+  "dur": 3.2772916666666667,
+  "text": "Don't compete with AI. Learn to create with it.",
+  "voice": "narrator",
+  "sr": 24000,
+  "shot": "E2_card"
+ },
+ {
+  "file": "vo_18.wav",
+  "start": 174.9,
+  "dur": 5.591666666666667,
+  "text": "Because technology can generate answers... but meaningful questions still need people.",
+  "voice": "narrator",
+  "sr": 24000,
+  "shot": "E3_card"
+ }
+]
