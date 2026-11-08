@@ -83,11 +83,11 @@ def build_office_day(coll, monitor_dir, phone_dir, nframes):
     chairs['colB'] = OF.build_chair(coll, (0.0, 0.94, 0), np.radians(180), 'OFF_ChairColB')
     # live screens: his monitor (sequence), colleagues' monitors (static AI UI)
     mon = seq_mat('OFF_MyMonitor', monitor_dir, 'f0001.jpg', nframes, 1.0)
-    out['my_monitor'] = screen_plane('OFF_MyMonitorScreen', 0.57, 0.33, (0, 0.2165, DESK_H + 0.34), (np.radians(90), 0, np.radians(180)), coll, mon)
+    out['my_monitor'] = screen_plane('OFF_MyMonitorScreen', 0.57, 0.33, (0, 0.2165, DESK_H + 0.34), (np.radians(90), 0, 0), coll, mon)
     out['my_monitor_mat'] = mon
     stat = OF.img_mat('OFF_ColMonitor', os.path.join(monitor_dir, 'static_ai.jpg'), emit=1.0, rough=0.2)
     for (x, y) in ((1.6, 0), (0, 1.6), (-1.6, 0), (3.2, 1.6), (-1.6, 1.6)):
-        screen_plane(f'OFF_ColScreen_{x}_{y}', 0.57, 0.33, (x, y + 0.2165, DESK_H + 0.34), (np.radians(90), 0, np.radians(180)), coll, stat)
+        screen_plane(f'OFF_ColScreen_{x}_{y}', 0.57, 0.33, (x, y + 0.2165, DESK_H + 0.34), (np.radians(90), 0, 0), coll, stat)
     # his keyboard, mouse, laptop, sketch paper, sticky notes
     kb = OF.om('OFF_Keys', U.hex2lin('#2a2c30'), 0.4)
     BR.box('OFF_Keyboard', -0.21, 0.21, -0.20, -0.06, DESK_H, DESK_H + 0.018, kb, coll, 0.004)
